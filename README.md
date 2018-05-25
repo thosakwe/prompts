@@ -1,5 +1,5 @@
 # prompts
-[![Pub](https://img.shields.io/pub/v/prompts.svg)](https://pub.dartlang.org/packages/prompts)
+[![Pub](https://img.shields.io/pub/v/prompts.svg?c=b)](https://pub.dartlang.org/packages/prompts)
 
 Rich, simple, synchronous command-line prompt library for Dart.
 
