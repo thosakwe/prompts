@@ -3,8 +3,13 @@
 
 Rich, simple, synchronous command-line prompt library for Dart.
 
+**Now with pretty colors!**
+
+![GIF Demo](tty.gif)
+
 # Example
 ```dart
+import 'package:io/ansi.dart';
 import 'package:prompts/prompts.dart' as prompts;
 
 void main() {
@@ -14,16 +19,19 @@ void main() {
 
   // ... Or many lines.
   print('Tell me about yourself.');
-  var bio = prompts.get("Enter some lines, using '\\' to escape line breaks",
-      allowMultiline: true);
+  var bio = prompts.get(
+    "Enter some lines, using '\\' to escape line breaks",
+    allowMultiline: true,
+    inputColor: resetAll,
+  );
   print('About $name:\n$bio');
 
   // Supports default values.
   name = prompts.get('Enter your REAL name', defaultsTo: name);
   print('Hello, $name!');
 
-  // "High-level" promptss are built upon [get].
-  // For example, we can prompts for confirmation trivially.
+  // "High-level" prompts are built upon [get].
+  // For example, we can prompt for confirmation trivially.
   bool shouldDownload = prompts.getBool('Really download this package?');
 
   if (!shouldDownload)
@@ -32,7 +40,7 @@ void main() {
     print('Downloading...!');
 
   // Or, get an integer, WITH validation.
-  int age = prompts.getInt('How old are you?', defaultsTo: 23, colon: false);
+  int age = prompts.getInt('How old are you?', defaultsTo: 23, chevron: false);
   print('$name, you\'re $age? Cool!');
 
   // We can choose from various values.

@@ -1,4 +1,8 @@
 import 'dart:io';
+import 'package:charcode/ascii.dart';
+import 'package:io/ansi.dart';
+
+final String _ansi = new String.fromCharCode($esc);
 
 /// Prompt the user, and return the first line read.
 /// This is the core of [Prompter], and the basis for all other
@@ -10,7 +14,11 @@ import 'dart:io';
 /// A default value may be given as [defaultsTo]. If present, the [message]
 /// will have `' ($defaultsTo)'` append to it.
 ///
-/// If [colon] is `true` (default), then a `:` will be appended to the prompt.
+/// If [chevron] is `true` (default), then a `>` will be appended to the prompt.
+///
+/// If [color] is `true` (default), then pretty ANSI colors will be used in the prompt.
+///
+/// [inputColor] may be used to give a color to the user's input as they type.
 ///
 /// If [allowMultiline] is `true` (default: `false`), then lines ending in a
 /// backslash (`\`) will be interpreted as a signal that another line of
@@ -18,8 +26,11 @@ import 'dart:io';
 String get(String message,
     {bool Function(String) validate,
     String defaultsTo,
-    bool colon: true,
-    bool allowMultiline: false}) {
+    @deprecated bool colon: true,
+    bool chevron: true,
+    bool color: true,
+    bool allowMultiline: false,
+    AnsiCode inputColor: cyan}) {
   validate ??= (s) => s.trim().isNotEmpty;
 
   if (defaultsTo != null) {
@@ -27,12 +38,26 @@ String get(String message,
     validate = (s) => s.trim().isEmpty || oldValidate(s);
   }
 
+  var prefix = "?";
+  var code = cyan;
+  var currentChevron = '\u00BB';
+
+  void writeIt() {
+    var msg = color
+        ? (code.wrap(prefix) + " " + wrapWith(message, [darkGray, styleBold]))
+        : message;
+    stdout.write(msg);
+    if (defaultsTo != null) stdout.write(' ($defaultsTo)');
+    if (chevron && colon)
+      stdout.write(
+          color ? lightGray.wrap(' $currentChevron') : ' $currentChevron');
+    stdout.write(' ');
+    stdout.write(color ? inputColor?.escape ?? '' : '');
+  }
+
   while (true) {
     if (message.isNotEmpty) {
-      stdout.write('$message');
-      if (defaultsTo != null) stdout.write(' ($defaultsTo)');
-      if (colon) stdout.write(':');
-      stdout.write(' ');
+      writeIt();
     }
 
     var buf = new StringBuffer();
@@ -48,11 +73,48 @@ String get(String message,
       }
     }
 
+    // Reset
+    stdout.write(color ? resetAll.escape : '');
+
     var line = buf.toString().trim();
 
     if (validate(line)) {
-      if (defaultsTo != null) return line.isEmpty ? defaultsTo : line;
-      return line;
+      String out;
+
+      if (defaultsTo != null) {
+        out = line.isEmpty ? defaultsTo : line;
+      } else {
+        out = line;
+      }
+
+      if (color) {
+        prefix = '\u2714';
+        code = green;
+        currentChevron = '\u2025';
+        stdout.write(color ? '${_ansi}[F' : '');
+        writeIt();
+        stdout.write(color ? darkGray.escape : '');
+        stdout.writeln(line);
+        stdout.write(color ? resetAll.escape : '');
+      }
+
+      return out;
+    } else {
+      code = red;
+      prefix = "\u2717";
+      stdout.write(color ? '${_ansi}[F' : '');
+
+      // Clear the line.
+      if (color) {
+        stdout.write('\r');
+        stdout.write(resetAll.escape);
+
+        for (int i = 0; i < stdout.terminalColumns; i++) {
+          stdout.write(' ');
+        }
+
+        stdout.write('\r');
+      }
     }
   }
 }
@@ -62,13 +124,21 @@ String get(String message,
 /// If [appendYesNo] is `true`, then a `(y/n)`, `(Y/n)` or `(y/N)` is
 /// appended to the [message], depending on its value.
 ///
-/// [colon] is forwarded to [get].
+/// [color], [inputColor], and [chevron] are forwarded to [get].
 bool getBool(String message,
-    {bool defaultsTo: false, bool appendYesNo: true, bool colon: true}) {
+    {bool defaultsTo: false,
+    bool appendYesNo: true,
+    bool color: true,
+    bool chevron: true,
+    @deprecated bool colon: true,
+    AnsiCode inputColor: cyan}) {
   if (appendYesNo)
     message +=
         defaultsTo == null ? ' (y/n)' : (defaultsTo ? ' (Y/n)' : ' (y/N)');
-  var result = get(message, colon: colon, validate: (s) {
+  var result = get(message,
+      color: color,
+      inputColor: inputColor,
+      chevron: chevron && colon, validate: (s) {
     s = s.trim().toLowerCase();
     return (defaultsTo != null && s.isEmpty) ||
         s.startsWith('y') ||
@@ -86,24 +156,39 @@ bool getBool(String message,
 ///
 /// An optional [radix] may be provided.
 ///
-/// [defaultsTo] and [colon] are forwarded to [get].
-int getInt(String message, {int defaultsTo, int radix: 10, bool colon: true}) {
+/// [color], [defaultsTo], [inputColor], and [chevron] are forwarded to [get].
+int getInt(String message,
+    {int defaultsTo,
+    int radix: 10,
+    bool color: true,
+    bool chevron: true,
+    @deprecated bool colon: true,
+    AnsiCode inputColor: cyan}) {
   return int.parse(get(
     message,
     defaultsTo: defaultsTo?.toString(),
-    colon: colon,
+    chevron: chevron && colon,
+    inputColor: inputColor,
+    color: color,
     validate: (s) => int.tryParse(s, radix: radix) != null,
   ));
 }
 
 /// Prompts the user to enter a double.
 ///
-/// [defaultsTo] and [colon] are forwarded to [get].
-double getDouble(String message, {double defaultsTo, bool colon: true}) {
+/// [color], [defaultsTo], [inputColor], and [chevron] are forwarded to [get].
+double getDouble(String message,
+    {double defaultsTo,
+    bool color: true,
+    bool chevron: true,
+    @deprecated bool colon: true,
+    AnsiCode inputColor: cyan}) {
   return double.parse(get(
     message,
     defaultsTo: defaultsTo?.toString(),
-    colon: colon,
+    chevron: chevron && colon,
+    inputColor: inputColor,
+    color: color,
     validate: (s) => double.tryParse(s) != null,
   ));
 }
@@ -116,8 +201,7 @@ double getDouble(String message, {double defaultsTo, bool colon: true}) {
 ///
 /// A default option may be provided by means of [defaultsTo].
 ///
-/// If [colon] is `true` (default), then a `:`
-/// character will also be appended to [message].
+/// [color], [defaultsTo], [inputColor], and [chevron] are forwarded to [get].
 ///
 /// Example:
 ///
@@ -129,13 +213,17 @@ double getDouble(String message, {double defaultsTo, bool colon: true}) {
 /// 3) Green
 /// ```
 T choose<T>(String message, Iterable<T> options,
-    {T defaultsTo, bool colon: true}) {
+    {T defaultsTo,
+    bool chevron: true,
+    @deprecated bool colon: true,
+    AnsiCode inputColor: cyan,
+    bool color: true}) {
   assert(options.isNotEmpty);
 
   var map = <T, String>{};
   for (var option in options) map[option] = option.toString();
 
-  if (colon) message += ':';
+  if (chevron && colon) message += ':';
 
   var b = new StringBuffer();
 
@@ -152,7 +240,9 @@ T choose<T>(String message, Iterable<T> options,
 
   var line = get(
     b.toString(),
-    colon: false,
+    chevron: false,
+    inputColor: inputColor,
+    color: color,
     validate: (s) {
       if (s.isEmpty) return defaultsTo != null;
       if (map.values.contains(s)) return true;
@@ -177,13 +267,17 @@ T choose<T>(String message, Iterable<T> options,
 ///
 /// A default option may be provided by means of [defaultsTo].
 ///
-/// If [colon] is `true` (default), a `:` is appended to [message].
+/// [color], [defaultsTo], [inputColor], and [chevron] are forwarded to [get].
 T chooseShorthand<T>(String message, Iterable<T> options,
-    {T defaultsTo, bool colon: true}) {
+    {T defaultsTo,
+    bool chevron: true,
+    @deprecated bool colon: true,
+    AnsiCode inputColor: cyan,
+    bool color: true}) {
   assert(options.isNotEmpty);
 
   var b = new StringBuffer(message);
-  if (colon) b.write(':');
+  if (chevron && colon) b.write(':');
   b.write(' (');
   var firstChars = <String>[], strings = <String>[];
   int i = 0;
@@ -208,21 +302,27 @@ T chooseShorthand<T>(String message, Iterable<T> options,
 
   T value;
 
-  get(b.toString(), colon: colon, validate: (s) {
-    if (s.isEmpty) return (value = defaultsTo) != null;
+  get(
+    b.toString(),
+    chevron: chevron && colon,
+    inputColor: inputColor,
+    color: color,
+    validate: (s) {
+      if (s.isEmpty) return (value = defaultsTo) != null;
 
-    if (strings.contains(s)) {
-      value = options.elementAt(strings.indexOf(s));
-      return true;
-    }
+      if (strings.contains(s)) {
+        value = options.elementAt(strings.indexOf(s));
+        return true;
+      }
 
-    if (firstChars.contains(s[0].toLowerCase())) {
-      value = options.elementAt(firstChars.indexOf(s[0].toLowerCase()));
-      return true;
-    }
+      if (firstChars.contains(s[0].toLowerCase())) {
+        value = options.elementAt(firstChars.indexOf(s[0].toLowerCase()));
+        return true;
+      }
 
-    return false;
-  });
+      return false;
+    },
+  );
 
   return value;
 }

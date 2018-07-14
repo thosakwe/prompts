@@ -1,3 +1,4 @@
+import 'package:io/ansi.dart';
 import 'package:prompts/prompts.dart' as prompts;
 
 void main() {
@@ -7,8 +8,11 @@ void main() {
 
   // ... Or many lines.
   print('Tell me about yourself.');
-  var bio = prompts.get("Enter some lines, using '\\' to escape line breaks",
-      allowMultiline: true);
+  var bio = prompts.get(
+    "Enter some lines, using '\\' to escape line breaks",
+    allowMultiline: true,
+    inputColor: resetAll,
+  );
   print('About $name:\n$bio');
 
   // Supports default values.
@@ -25,7 +29,7 @@ void main() {
     print('Downloading...!');
 
   // Or, get an integer, WITH validation.
-  int age = prompts.getInt('How old are you?', defaultsTo: 23, colon: false);
+  int age = prompts.getInt('How old are you?', defaultsTo: 23, chevron: false);
   print('$name, you\'re $age? Cool!');
 
   // We can choose from various values.
