@@ -5,7 +5,7 @@ Rich, simple, synchronous command-line prompt library for Dart.
 
 **Now with pretty colors!**
 
-![GIF Demo](tty.gif)
+![GIF Demo](usage.gif)
 
 # Example
 ```dart
