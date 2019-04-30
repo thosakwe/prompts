@@ -6,6 +6,9 @@ void main() {
   var name = prompts.get('Enter your name');
   print('Hello, $name!');
 
+  var password = prompts.get('Enter a password', conceal: true);
+  print('TOP-SECRET: $password');
+
   // ... Or many lines.
   print('Tell me about yourself.');
   var bio = prompts.get(
@@ -49,9 +52,9 @@ class Color {
 
   const Color(this.name, this.description);
 
-  static const Color red = const Color('Red', 'The color of apples.'),
-      blue = const Color('Blue', 'The color of the sky.'),
-      green = const Color('Green', 'The color of leaves.');
+  static const Color red = Color('Red', 'The color of apples.'),
+      blue = Color('Blue', 'The color of the sky.'),
+      green = Color('Green', 'The color of leaves.');
 
   String get about => '$name - $description';
 
