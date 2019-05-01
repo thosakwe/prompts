@@ -2,6 +2,10 @@
 * Make `choose` only print options once, and instead add `prompt`.
 * Add `names` to `choose`.
 * `conceal` was `true` in `chooseShorthand`; revert to `false`.
+* *Always* use `AnsiCode.wrap`, to prevent "hanging colors."
+* Always heed the `color` flag.
+* Use VT100 codes for clearing lines, etc. (smoother, no jank)
+    * http://www.climagic.org/mirrors/VT100_Escape_Codes.html
 
 # 1.2.0
 * Add password reading options.

@@ -2,7 +2,22 @@ import 'dart:io';
 import 'package:charcode/ascii.dart';
 import 'package:io/ansi.dart';
 
-final String _ansi = String.fromCharCode($esc);
+// final String _ansi = String.fromCharCode($esc);
+
+/// Goes up one line.
+void goUpOneLine() {
+  // ^[[1A
+  stdout.add([$esc, $lbracket, $1, $A]);
+}
+
+/// Clears the current line, and goes back to the start of the line.
+void clearLine() {
+  // // \r^[[2K\r
+  stdout.add([$esc, $lbracket, $2, $k, $cr]);
+  // stdout.write('\r');
+  // for (int i = 0; i < stdout.terminalColumns; i++) stdout.write(' ');
+  // stdout.write('\r');
+}
 
 /// Prompt the user, and return the first line read.
 /// This is the core of [Prompter], and the basis for all other
@@ -32,108 +47,109 @@ String get(String message,
     bool allowMultiline = false,
     bool conceal = false,
     AnsiCode inputColor = cyan}) {
-  try {
-    validate ??= (s) => s.trim().isNotEmpty;
+  validate ??= (s) => s.trim().isNotEmpty;
 
-    if (defaultsTo != null) {
-      var oldValidate = validate;
-      validate = (s) => s.trim().isEmpty || oldValidate(s);
+  if (defaultsTo != null) {
+    var oldValidate = validate;
+    validate = (s) => s.trim().isEmpty || oldValidate(s);
+  }
+
+  var prefix = "?";
+  var code = cyan;
+  var currentChevron = '\u00BB';
+  var oldEchoMode = stdin.echoMode;
+
+  void writeIt() {
+    var msg = color
+        ? (code.wrap(prefix) + " " + wrapWith(message, [darkGray, styleBold]))
+        : message;
+    stdout.write(msg);
+    if (defaultsTo != null) stdout.write(' ($defaultsTo)');
+    if (chevron && colon)
+      stdout.write(
+          color ? lightGray.wrap(' $currentChevron') : ' $currentChevron');
+
+    stdout.write(' ');
+
+    if (ansiOutputEnabled) {
+      // Clear the rest of line.
+      // ^[[0K
+      stdout.add([$esc, $lbracket, $0, $K]);
     }
 
-    var prefix = "?";
-    var code = cyan;
-    var currentChevron = '\u00BB';
-    var oldEchoMode = stdin.echoMode;
+    // stdout.write(color ? inputColor?.escape ?? '' : '');
+  }
 
-    void writeIt() {
-      var msg = color
-          ? (code.wrap(prefix) + " " + wrapWith(message, [darkGray, styleBold]))
-          : message;
-      stdout.write(msg);
-      if (defaultsTo != null) stdout.write(' ($defaultsTo)');
-      if (chevron && colon)
-        stdout.write(
-            color ? lightGray.wrap(' $currentChevron') : ' $currentChevron');
-      stdout.write(' ');
-      stdout.write(color ? inputColor?.escape ?? '' : '');
+  while (true) {
+    if (message.isNotEmpty) {
+      writeIt();
     }
+
+    var buf = StringBuffer();
+    if (conceal) stdin.echoMode = false;
 
     while (true) {
-      if (message.isNotEmpty) {
-        writeIt();
-      }
+      var line = stdin.readLineSync().trim();
 
-      var buf = StringBuffer();
-      if (conceal) stdin.echoMode = false;
-
-      while (true) {
-        var line = stdin.readLineSync().trim();
-
-        if (!line.endsWith('\\')) {
-          buf.writeln(line);
-          break;
-        } else {
-          buf.writeln(line.substring(0, line.length - 1));
-        }
-      }
-
-      if (conceal) {
-        stdin.echoMode = oldEchoMode;
-        stdout.writeln();
-      }
-
-      // Reset
-      stdout.write(color ? resetAll.escape : '');
-
-      var line = buf.toString().trim();
-
-      if (validate(line)) {
-        String out;
-
-        if (defaultsTo != null) {
-          out = line.isEmpty ? defaultsTo : line;
-        } else {
-          out = line;
-        }
-
-        if (color) {
-          var toWrite = line;
-          if (conceal) {
-            var asterisks = List.filled(line.length, $asterisk);
-            toWrite = String.fromCharCodes(asterisks);
-          }
-
-          prefix = '\u2714';
-          code = green;
-          currentChevron = '\u2025';
-          stdout.write(color ? '${_ansi}[F' : '');
-          writeIt();
-          stdout.write(color ? darkGray.escape : '');
-          stdout.writeln(toWrite);
-          stdout.write(color ? resetAll.escape : '');
-        }
-
-        return out;
+      if (!line.endsWith('\\')) {
+        buf.writeln(line);
+        break;
       } else {
-        code = red;
-        prefix = "\u2717";
-        stdout.write(color ? '${_ansi}[F' : '');
-
-        // Clear the line.
-        if (color) {
-          stdout.write('\r');
-          stdout.write(resetAll.escape);
-
-          for (int i = 0; i < stdout.terminalColumns; i++) {
-            stdout.write(' ');
-          }
-
-          stdout.write('\r');
-        }
+        buf.writeln(line.substring(0, line.length - 1));
       }
+
+      clearLine();
     }
-  } finally {
-    stdout.write(resetAll.wrap(''));
+
+    if (conceal) {
+      stdin.echoMode = oldEchoMode;
+      stdout.writeln();
+    }
+
+    // Reset
+    // stdout.write(color ? resetAll.escape : '');
+
+    var line = buf.toString().trim();
+
+    if (validate(line)) {
+      String out;
+
+      if (defaultsTo != null) {
+        out = line.isEmpty ? defaultsTo : line;
+      } else {
+        out = line;
+      }
+
+      if (color) {
+        var toWrite = line;
+        if (conceal) {
+          var asterisks = List.filled(line.length, $asterisk);
+          toWrite = String.fromCharCodes(asterisks);
+        }
+
+        prefix = '\u2714';
+        code = green;
+        currentChevron = '\u2025';
+
+        if (ansiOutputEnabled) stdout.add([$esc, $F]);
+        goUpOneLine();
+        clearLine();
+        writeIt();
+        // stdout.write(color ? darkGray.escape : '');
+        stdout.writeln(color ? darkGray.wrap(toWrite) : toWrite);
+        // stdout.write(color ? resetAll.escape : '');
+      }
+
+      return out;
+    } else {
+      code = red;
+      prefix = "\u2717";
+      if (ansiOutputEnabled) stdout.add([$esc, $F]);
+
+      // Clear the line.
+      goUpOneLine();
+      clearLine();
+    }
   }
 }
 
@@ -228,6 +244,11 @@ double getDouble(String message,
 ///
 /// A default option may be provided by means of [defaultsTo].
 ///
+/// A custom [prompt] may be provided, which is then forwarded to [get].
+///
+/// This function also supports an [interactive] mode, where user arrow keys are processed.
+/// In [interactive] mode, you can provide a [defaultIndex] for the UI to start on.
+///
 /// [color], [defaultsTo], [inputColor], [conceal], and [chevron] are forwarded to [get].
 ///
 /// Example:
@@ -242,17 +263,31 @@ double getDouble(String message,
 T choose<T>(String message, Iterable<T> options,
     {T defaultsTo,
     String prompt = 'Enter your choice',
+    // int defaultIndex = 0,
     bool chevron = true,
     @deprecated bool colon = true,
     AnsiCode inputColor = cyan,
     bool color = true,
     bool conceal = false,
+    bool interactive = true,
     Iterable<String> names}) {
-  assert(options.isNotEmpty);
+  if (options.isEmpty) {
+    throw ArgumentError.value('`options` may not be empty.');
+  }
+
+  if (defaultsTo != null && !options.contains(defaultsTo)) {
+    throw ArgumentError(
+        '$defaultsTo is not contained in $options, and therefore cannot be the default value.');
+  }
 
   if (names != null && names.length != options.length) {
     throw ArgumentError(
         '$names must have length ${options.length}, not ${names.length}.');
+  }
+
+  if (names != null && names.any((s) => s.length != 1)) {
+    throw ArgumentError(
+        'Every member of $names must be a string with a length of 1.');
   }
 
   var map = <T, String>{};
@@ -262,45 +297,136 @@ T choose<T>(String message, Iterable<T> options,
 
   var b = StringBuffer();
 
-  b..writeln(message)..writeln();
+  b..writeln(message);
 
-  for (int i = 0; i < options.length; i++) {
-    var key = map.keys.elementAt(i);
-    var indicator = names != null ? names.elementAt(i) : (i + 1).toString();
-    b.write('$indicator) ${map[key]}');
-    if (key == defaultsTo) b.write(' [Default - Press Enter]');
-    b.writeln();
-  }
+  if (interactive && ansiOutputEnabled) {
+    var index = defaultsTo != null ? options.toList().indexOf(defaultsTo) : 0;
+    var oldEchoMode = stdin.echoMode;
+    var oldLineMode = stdin.lineMode;
+    var needsClear = false;
+    if (color)
+      print(wrapWith(b.toString(), [darkGray, styleBold]));
+    else
+      print(b);
 
-  b.writeln();
-  print(darkGray.wrap(b.toString()));
+    void writeIt() {
+      if (!needsClear) {
+        needsClear = true;
+      } else {
+        for (int i = 0; i < options.length; i++) {
+          goUpOneLine();
+          clearLine();
+        }
+      }
 
-  var line = get(
-    prompt,
-    chevron: false,
-    inputColor: inputColor,
-    color: color,
-    conceal: conceal,
-    validate: (s) {
-      if (s.isEmpty) return defaultsTo != null;
-      if (map.values.contains(s)) return true;
-      if (names != null && names.contains(s)) return true;
-      int i = int.tryParse(s);
-      if (i == null) return false;
-      return i >= 1 && i <= options.length;
-    },
-  );
+      for (int i = 0; i < options.length; i++) {
+        var key = map.keys.elementAt(i);
+        var msg = map[key];
+        AnsiCode code;
 
-  if (line.isEmpty) return defaultsTo;
-  int i;
-  if (names != null && names.contains(line)) {
-    i = names.toList().indexOf(line) + 1;
+        if (index == i) {
+          code = cyan;
+          msg = '* $msg';
+        } else {
+          code = darkGray;
+          msg = '$msg  ';
+        }
+
+        if (names != null) {
+          msg = names.elementAt(i) + ') $msg';
+        }
+
+        if (color)
+          print(code.wrap(msg));
+        else
+          print(msg);
+      }
+    }
+
+    do {
+      int ch;
+      writeIt();
+
+      try {
+        stdin.lineMode = stdin.echoMode = false;
+        ch = stdin.readByteSync();
+
+        if (ch == $esc) {
+          ch = stdin.readByteSync();
+          if (ch == $lbracket) {
+            ch = stdin.readByteSync();
+            if (ch == $A) {
+              // Up key
+              index--;
+              if (index < 0) index = options.length - 1;
+              writeIt();
+            } else if (ch == $B) {
+              // Down key
+              index++;
+              if (index >= options.length) index = 0;
+              writeIt();
+            }
+          }
+        } else if (ch == $lf) {
+          // Enter key pressed - submit
+          return map.keys.elementAt(index);
+        } else {
+          // Check if this matches any name
+          var s = String.fromCharCode(ch);
+          if (names != null && names.contains(s)) {
+            index = names.toList().indexOf(s);
+            return map.keys.elementAt(index);
+          }
+        }
+      } finally {
+        stdin.lineMode = oldLineMode;
+        stdin.echoMode = oldEchoMode;
+      }
+    } while (true);
   } else {
-    i = int.tryParse(line);
-  }
+    b.writeln();
 
-  if (i != null) return map.keys.elementAt(i - 1);
-  return map.keys.elementAt(map.values.toList(growable: false).indexOf(line));
+    for (int i = 0; i < options.length; i++) {
+      var key = map.keys.elementAt(i);
+      var indicator = names != null ? names.elementAt(i) : (i + 1).toString();
+      b.write('$indicator) ${map[key]}');
+      if (key == defaultsTo) b.write(' [Default - Press Enter]');
+      b.writeln();
+    }
+
+    b.writeln();
+    if (color)
+      print(wrapWith(b.toString(), [darkGray, styleBold]));
+    else
+      print(b);
+
+    var line = get(
+      prompt,
+      chevron: false,
+      inputColor: inputColor,
+      color: color,
+      conceal: conceal,
+      validate: (s) {
+        if (s.isEmpty) return defaultsTo != null;
+        if (map.values.contains(s)) return true;
+        if (names != null && names.contains(s)) return true;
+        int i = int.tryParse(s);
+        if (i == null) return false;
+        return i >= 1 && i <= options.length;
+      },
+    );
+
+    if (line.isEmpty) return defaultsTo;
+    int i;
+    if (names != null && names.contains(line)) {
+      i = names.toList().indexOf(line) + 1;
+    } else {
+      i = int.tryParse(line);
+    }
+
+    if (i != null) return map.keys.elementAt(i - 1);
+    return map.keys.elementAt(map.values.toList(growable: false).indexOf(line));
+  }
 }
 
 /// Similar to [choose], but opts for a shorthand syntax that fits into one line,
@@ -320,7 +446,9 @@ T chooseShorthand<T>(String message, Iterable<T> options,
     AnsiCode inputColor = cyan,
     bool color = true,
     bool conceal = false}) {
-  assert(options.isNotEmpty);
+  if (options.isEmpty) {
+    throw ArgumentError.value('`options` may not be empty.');
+  }
 
   var b = StringBuffer(message);
   if (chevron && colon) b.write(':');

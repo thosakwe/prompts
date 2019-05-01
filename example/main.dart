@@ -41,9 +41,15 @@ void main() {
   Color color = prompts.chooseShorthand('Tell me your favorite color', rgb);
   print('You chose: ${color.about}');
 
-  // The standard chooser prints to multiple lines, but is often
+  // Displays an interactive selection in the terminal.
+  //
+  // If you pass `interactive: false`, then the standard chooser prints
+  // to multiple lines, but is often
   // clearer to read, and has more obvious semantics.
-  color = prompts.choose('Choose another color', rgb, defaultsTo: Color.blue);
+  //
+  // You can also optionaly pass short `names`.
+  color = prompts.choose('Choose another color', rgb,
+      defaultsTo: Color.blue, names: ['r', 'g', 'b']);
   print(color.about);
 }
 
