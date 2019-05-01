@@ -241,12 +241,19 @@ double getDouble(String message,
 /// ```
 T choose<T>(String message, Iterable<T> options,
     {T defaultsTo,
+    String prompt = 'Enter your choice',
     bool chevron = true,
     @deprecated bool colon = true,
     AnsiCode inputColor = cyan,
     bool color = true,
-    bool conceal = false}) {
+    bool conceal = false,
+    Iterable<String> names}) {
   assert(options.isNotEmpty);
+
+  if (names != null && names.length != options.length) {
+    throw ArgumentError(
+        '$names must have length ${options.length}, not ${names.length}.');
+  }
 
   var map = <T, String>{};
   for (var option in options) map[option] = option.toString();
@@ -259,15 +266,17 @@ T choose<T>(String message, Iterable<T> options,
 
   for (int i = 0; i < options.length; i++) {
     var key = map.keys.elementAt(i);
-    b.write('${i + 1}) ${map[key]}');
+    var indicator = names != null ? names.elementAt(i) : (i + 1).toString();
+    b.write('$indicator) ${map[key]}');
     if (key == defaultsTo) b.write(' [Default - Press Enter]');
     b.writeln();
   }
 
   b.writeln();
+  print(darkGray.wrap(b.toString()));
 
   var line = get(
-    b.toString(),
+    prompt,
     chevron: false,
     inputColor: inputColor,
     color: color,
@@ -275,6 +284,7 @@ T choose<T>(String message, Iterable<T> options,
     validate: (s) {
       if (s.isEmpty) return defaultsTo != null;
       if (map.values.contains(s)) return true;
+      if (names != null && names.contains(s)) return true;
       int i = int.tryParse(s);
       if (i == null) return false;
       return i >= 1 && i <= options.length;
@@ -282,7 +292,13 @@ T choose<T>(String message, Iterable<T> options,
   );
 
   if (line.isEmpty) return defaultsTo;
-  int i = int.tryParse(line);
+  int i;
+  if (names != null && names.contains(line)) {
+    i = names.toList().indexOf(line) + 1;
+  } else {
+    i = int.tryParse(line);
+  }
+
   if (i != null) return map.keys.elementAt(i - 1);
   return map.keys.elementAt(map.values.toList(growable: false).indexOf(line));
 }
@@ -303,7 +319,7 @@ T chooseShorthand<T>(String message, Iterable<T> options,
     @deprecated bool colon = true,
     AnsiCode inputColor = cyan,
     bool color = true,
-    bool conceal = true}) {
+    bool conceal = false}) {
   assert(options.isNotEmpty);
 
   var b = StringBuffer(message);
