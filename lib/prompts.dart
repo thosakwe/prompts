@@ -299,6 +299,12 @@ T choose<T>(String message, Iterable<T> options,
 
   b..writeln(message);
 
+  /// Turn off interactive is we are running this on Windows as if prevents
+  /// Powershell/CMD from not being able to select the options.
+  if (Platform.isWindows) {
+    interactive = false;
+  }
+
   if (interactive && ansiOutputEnabled) {
     var index = defaultsTo != null ? options.toList().indexOf(defaultsTo) : 0;
     var oldEchoMode = stdin.echoMode;
