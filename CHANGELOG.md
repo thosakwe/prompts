@@ -1,3 +1,7 @@
+# 1.3.1
+* Completely disable interactive selection on Windows.
+  * https://github.com/thosakwe/prompts/pull/3
+
 # 1.3.0
 * Make `choose` only print options once, and instead add `prompt`.
 * Add `names` to `choose`.
