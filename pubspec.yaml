@@ -1,5 +1,5 @@
 name: prompts
-version: 1.3.0
+version: 1.3.1
 description: Rich, simple, synchronous command-line prompt library for Dart.
 homepage: https://github.com/thosakwe/prompts
 author: Tobe O <thosakwe@gmail.com>
