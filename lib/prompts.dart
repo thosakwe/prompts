@@ -65,9 +65,10 @@ String get(String message,
         : message;
     stdout.write(msg);
     if (defaultsTo != null) stdout.write(' ($defaultsTo)');
-    if (chevron && colon)
+    if (chevron && colon) {
       stdout.write(
           color ? lightGray.wrap(' $currentChevron') : ' $currentChevron');
+    }
 
     stdout.write(' ');
 
@@ -167,9 +168,10 @@ bool getBool(String message,
     bool conceal = false,
     @deprecated bool colon = true,
     AnsiCode inputColor = cyan}) {
-  if (appendYesNo)
+  if (appendYesNo) {
     message +=
         defaultsTo == null ? ' (y/n)' : (defaultsTo ? ' (Y/n)' : ' (y/N)');
+  }
   var result = get(
     message,
     color: color,
@@ -291,7 +293,9 @@ T choose<T>(String message, Iterable<T> options,
   }
 
   var map = <T, String>{};
-  for (var option in options) map[option] = option.toString();
+  for (var option in options) {
+    map[option] = option.toString();
+  }
 
   if (chevron && colon) message += ':';
 
@@ -304,10 +308,11 @@ T choose<T>(String message, Iterable<T> options,
     var oldEchoMode = stdin.echoMode;
     var oldLineMode = stdin.lineMode;
     var needsClear = false;
-    if (color)
+    if (color) {
       print(wrapWith(b.toString(), [darkGray, styleBold]));
-    else
+    } else {
       print(b);
+    }
 
     void writeIt() {
       if (!needsClear) {
@@ -336,10 +341,11 @@ T choose<T>(String message, Iterable<T> options,
           msg = names.elementAt(i) + ') $msg';
         }
 
-        if (color)
+        if (color) {
           print(code.wrap(msg));
-        else
+        } else {
           print(msg);
+        }
       }
     }
 
@@ -395,10 +401,11 @@ T choose<T>(String message, Iterable<T> options,
     }
 
     b.writeln();
-    if (color)
+    if (color) {
       print(wrapWith(b.toString(), [darkGray, styleBold]));
-    else
+    } else {
       print(b);
+    }
 
     var line = get(
       prompt,
@@ -461,10 +468,11 @@ T chooseShorthand<T>(String message, Iterable<T> options,
     if (i++ > 0) b.write('/');
 
     if (defaultsTo != null) {
-      if (defaultsTo == option)
+      if (defaultsTo == option) {
         str = str[0].toUpperCase() + str.substring(1);
-      else
+      } else {
         str = str[0].toLowerCase() + str.substring(1);
+      }
     }
 
     b.write(str);

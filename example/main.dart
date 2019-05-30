@@ -26,10 +26,11 @@ void main() {
   // For example, we can prompt for confirmation trivially.
   bool shouldDownload = prompts.getBool('Really download this package?');
 
-  if (!shouldDownload)
+  if (!shouldDownload) {
     print('Not downloading.');
-  else
+  } else {
     print('Downloading...!');
+  }
 
   // Or, get an integer, WITH validation.
   int age = prompts.getInt('How old are you?', defaultsTo: 23, chevron: false);
