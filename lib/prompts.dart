@@ -299,7 +299,7 @@ T choose<T>(String message, Iterable<T> options,
 
   b..writeln(message);
 
-  if (interactive && ansiOutputEnabled) {
+  if (interactive && ansiOutputEnabled && !Platform.isWindows) {
     var index = defaultsTo != null ? options.toList().indexOf(defaultsTo) : 0;
     var oldEchoMode = stdin.echoMode;
     var oldLineMode = stdin.lineMode;
