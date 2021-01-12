@@ -54,14 +54,14 @@ String get(String message,
     validate = (s) => s.trim().isEmpty || oldValidate(s);
   }
 
-  var prefix = "?";
+  var prefix = '?';
   var code = cyan;
   var currentChevron = '\u00BB';
   var oldEchoMode = stdin.echoMode;
 
   void writeIt() {
     var msg = color
-        ? (code.wrap(prefix) + " " + wrapWith(message, [darkGray, styleBold]))
+        ? '${code.wrap(prefix)} ${wrapWith(message, [darkGray, styleBold])}'
         : message;
     stdout.write(msg);
     if (defaultsTo != null) stdout.write(' ($defaultsTo)');
@@ -144,7 +144,7 @@ String get(String message,
       return out;
     } else {
       code = red;
-      prefix = "\u2717";
+      prefix = '\u2717';
       if (ansiOutputEnabled) stdout.add([$esc, $F]);
 
       // Clear the line.
@@ -187,9 +187,11 @@ bool getBool(String message,
   );
   result = result.toLowerCase();
 
-  if (result.isEmpty)
+  if (result.isEmpty) {
     return defaultsTo;
-  else if (result == 'y') return true;
+  } else if (result == 'y') {
+    return true;
+  }
   return false;
 }
 
@@ -318,13 +320,13 @@ T choose<T>(String message, Iterable<T> options,
       if (!needsClear) {
         needsClear = true;
       } else {
-        for (int i = 0; i < options.length; i++) {
+        for (var i = 0; i < options.length; i++) {
           goUpOneLine();
           clearLine();
         }
       }
 
-      for (int i = 0; i < options.length; i++) {
+      for (var i = 0; i < options.length; i++) {
         var key = map.keys.elementAt(i);
         var msg = map[key];
         AnsiCode code;
@@ -392,7 +394,7 @@ T choose<T>(String message, Iterable<T> options,
   } else {
     b.writeln();
 
-    for (int i = 0; i < options.length; i++) {
+    for (var i = 0; i < options.length; i++) {
       var key = map.keys.elementAt(i);
       var indicator = names != null ? names.elementAt(i) : (i + 1).toString();
       b.write('$indicator) ${map[key]}');
@@ -417,7 +419,7 @@ T choose<T>(String message, Iterable<T> options,
         if (s.isEmpty) return defaultsTo != null;
         if (map.values.contains(s)) return true;
         if (names != null && names.contains(s)) return true;
-        int i = int.tryParse(s);
+        final i = int.tryParse(s);
         if (i == null) return false;
         return i >= 1 && i <= options.length;
       },
@@ -461,7 +463,7 @@ T chooseShorthand<T>(String message, Iterable<T> options,
   if (chevron && colon) b.write(':');
   b.write(' (');
   var firstChars = <String>[], strings = <String>[];
-  int i = 0;
+  var i = 0;
 
   for (var option in options) {
     var str = option.toString();
