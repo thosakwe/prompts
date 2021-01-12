@@ -35,6 +35,10 @@ void clearLine() {
 ///
 /// [inputColor] may be used to give a color to the user's input as they type.
 ///
+/// [hintText] is an optional string to be shown as a hint/tooltip/alt/description
+/// of this field. It is shown below the prompt (on the next line) and is removed
+/// after the answer is accepted.
+///
 /// If [allowMultiline] is `true` (default: `false`), then lines ending in a
 /// backslash (`\`) will be interpreted as a signal that another line of
 /// input is to come. This is helpful for building REPL's.
@@ -46,7 +50,8 @@ String get(String message,
     bool color = true,
     bool allowMultiline = false,
     bool conceal = false,
-    AnsiCode inputColor = cyan}) {
+    AnsiCode inputColor = cyan,
+    String hintText}) {
   validate ??= (s) => s.trim().isNotEmpty;
 
   if (defaultsTo != null) {
@@ -81,6 +86,7 @@ String get(String message,
     // stdout.write(color ? inputColor?.escape ?? '' : '');
   }
 
+  writeHintText(hintText);
   while (true) {
     if (message.isNotEmpty) {
       writeIt();
@@ -141,6 +147,7 @@ String get(String message,
         // stdout.write(color ? resetAll.escape : '');
       }
 
+      clearHintText(hintText);
       return out;
     } else {
       code = red;
@@ -508,4 +515,16 @@ T chooseShorthand<T>(String message, Iterable<T> options,
   );
 
   return value;
+}
+
+void writeHintText(String hintText) {
+  if (hintText != null) {
+    stdout.write(darkGray.wrap('\n$hintText\u{1B}[1A\r'));
+  }
+}
+
+void clearHintText(String hintText) {
+  if (hintText != null) {
+    stdout.write('\r\u{1B}[K');
+  }
 }
