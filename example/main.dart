@@ -24,7 +24,7 @@ void main() {
 
   // "High-level" prompts are built upon [get].
   // For example, we can prompt for confirmation trivially.
-  bool shouldDownload = prompts.getBool('Really download this package?');
+  var shouldDownload = prompts.getBool('Really download this package?');
 
   if (!shouldDownload) {
     print('Not downloading.');
@@ -33,13 +33,13 @@ void main() {
   }
 
   // Or, get an integer, WITH validation.
-  int age = prompts.getInt('How old are you?', defaultsTo: 23, chevron: false);
+  var age = prompts.getInt('How old are you?', defaultsTo: 23, chevron: false);
   print('$name, you\'re $age? Cool!');
 
   // We can choose from various values.
   // There are two methods - shorthand and regular.
   var rgb = [Color.red, Color.green, Color.blue];
-  Color color = prompts.chooseShorthand('Tell me your favorite color', rgb);
+  var color = prompts.chooseShorthand('Tell me your favorite color', rgb)!;
   print('You chose: ${color.about}');
 
   // Displays an interactive selection in the terminal.
@@ -50,7 +50,7 @@ void main() {
   //
   // You can also optionaly pass short `names`.
   color = prompts.choose('Choose another color', rgb,
-      defaultsTo: Color.blue, names: ['r', 'g', 'b']);
+      defaultsTo: Color.blue, names: ['r', 'g', 'b'])!;
   print(color.about);
 }
 
