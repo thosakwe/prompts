@@ -1,3 +1,3 @@
 import 'package:prompts/prompts.dart';
 
-main() => getInt('Enter your age');
+int main() => getInt('Enter your age');

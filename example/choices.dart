@@ -1,6 +1,6 @@
 import 'package:prompts/prompts.dart' as prompts;
 
-main() {
+void main() {
   var albums = [
     'Music of My Mind',
     'Talking Book',
