@@ -6,7 +6,11 @@ void main() {
   var name = prompts.get('Enter your name');
   print('Hello, $name!');
 
-  var password = prompts.get('Enter a password', conceal: true);
+  var password = prompts.get(
+    'Enter a password',
+    conceal: true,
+    hintText: 'Make sure to keep this super secure!',
+  );
   print('TOP-SECRET: $password');
 
   // ... Or many lines.
