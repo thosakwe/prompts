@@ -241,7 +241,7 @@ double getDouble(String message,
 /// once one has been chosen.
 ///
 /// Each option will be prefixed with a number, corresponding
-/// to its index + `1`.
+/// to its index + `1`. Pass an iterable of [names] to provide custom prefixes.
 ///
 /// A default option may be provided by means of [defaultsTo].
 ///
