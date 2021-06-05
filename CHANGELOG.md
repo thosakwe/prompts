@@ -1,3 +1,8 @@
+# 2.0.0
+* Migrate to nullsafety and clean up linting problems.
+
+See PR #7: https://github.com/thosakwe/prompts/pull/7
+
 # 1.3.1
 * Completely disable interactive selection on Windows.
   * https://github.com/thosakwe/prompts/pull/3
