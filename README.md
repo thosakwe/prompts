@@ -7,6 +7,8 @@ Rich, simple, synchronous command-line prompt library for Dart.
 
 ![GIF Demo](usage.gif)
 
+![upgrade](upgradeSelect.png)
+
 # Example
 ```dart
 import 'package:io/ansi.dart';

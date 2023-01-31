@@ -2,38 +2,32 @@ import 'dart:io';
 import 'package:charcode/ascii.dart';
 import 'package:io/ansi.dart';
 
-// final String _ansi = String.fromCharCode($esc);
-
-/// Goes up one line.
+/// Goes up one line
 void goUpOneLine() {
-  // ^[[1A
   stdout.add([$esc, $lbracket, $1, $A]);
 }
 
 /// Clears the current line, and goes back to the start of the line.
 void clearLine() {
-  // // \r^[[2K\r
   stdout.add([$esc, $lbracket, $2, $k, $cr]);
-  // stdout.write('\r');
-  // for (int i = 0; i < stdout.terminalColumns; i++) stdout.write(' ');
-  // stdout.write('\r');
 }
 
+///
 /// Prompt the user, and return the first line read.
 /// This is the core of [Prompter], and the basis for all other
 /// functions.
 ///
-/// A function to [validate] may be passed. If `null`, it defaults
+/// A function to [Validate] may be passed. If `null`, it defaults
 /// to checking if the string is not empty.
 ///
 /// A default value may be given as [defaultsTo]. If present, the [message]
-/// will have `' ($defaultsTo)'` append to it.
+/// will have `($defaultsTo)` append to it.
 ///
-/// If [chevron] is `true` (default), then a `>` will be appended to the prompt.
+/// If [chevron] is `true` (default), then a `>` will be appened to the prompt.
 ///
 /// If [color] is `true` (default), then pretty ANSI colors will be used in the prompt.
 ///
-/// [inputColor] may be used to give a color to the user's input as they type.
+/// If [inputColor] may be used to give a color to the user's input as they type.
 ///
 /// If [allowMultiline] is `true` (default: `false`), then lines ending in a
 /// backslash (`\`) will be interpreted as a signal that another line of
@@ -63,8 +57,11 @@ String get(String message,
     var msg = color
         ? (code.wrap(prefix)! + ' ' + wrapWith(message, [darkGray, styleBold])!)
         : message;
+
     stdout.write(msg);
+
     if (defaultsTo != null) stdout.write(' ($defaultsTo)');
+
     if (chevron && colon) {
       stdout.write(
           color ? lightGray.wrap(' $currentChevron') : ' $currentChevron');
@@ -74,11 +71,8 @@ String get(String message,
 
     if (ansiOutputEnabled) {
       // Clear the rest of line.
-      // ^[[0K
       stdout.add([$esc, $lbracket, $0, $K]);
     }
-
-    // stdout.write(color ? inputColor?.escape ?? '' : '');
   }
 
   while (true) {
@@ -267,10 +261,15 @@ T? choose<T>(String message, Iterable<T> options,
     // int defaultIndex = 0,
     bool chevron = true,
     @deprecated bool colon = true,
-    AnsiCode inputColor = cyan,
+    AnsiCode inputColor = blue,
     bool color = true,
     bool conceal = false,
     bool interactive = true,
+    AnsiCode selectedColor = cyan,
+    String selectedPrefix = '*',
+    AnsiCode unSelectedColor = darkGray,
+    AnsiCode nonInteractiveMenuColor = darkGray,
+    AnsiCode nonInteractiveMenuStyle = styleBold,
     Iterable<String>? names}) {
   if (options.isEmpty) {
     throw ArgumentError.value('`options` may not be empty.');
@@ -308,7 +307,8 @@ T? choose<T>(String message, Iterable<T> options,
     var oldLineMode = stdin.lineMode;
     var needsClear = false;
     if (color) {
-      print(wrapWith(b.toString(), [darkGray, styleBold]));
+      print(wrapWith(
+          b.toString(), [nonInteractiveMenuColor, nonInteractiveMenuStyle]));
     } else {
       print(b);
     }
@@ -328,11 +328,14 @@ T? choose<T>(String message, Iterable<T> options,
         var msg = map[key];
         AnsiCode code;
 
+        // 选中的颜色和前缀
         if (index == i) {
-          code = cyan;
-          msg = '* $msg';
-        } else {
-          code = darkGray;
+          code = selectedColor;
+          msg = '$selectedPrefix $msg';
+        }
+        // 未选中的颜色和前缀
+        else {
+          code = unSelectedColor;
           msg = '$msg  ';
         }
 
@@ -445,13 +448,18 @@ T? choose<T>(String message, Iterable<T> options,
 /// A default option may be provided by means of [defaultsTo].
 ///
 /// [color], [defaultsTo], [inputColor], and [chevron] are forwarded to [get].
-T? chooseShorthand<T>(String message, Iterable<T> options,
-    {T? defaultsTo,
-    bool chevron = true,
-    @deprecated bool colon = true,
-    AnsiCode inputColor = cyan,
-    bool color = true,
-    bool conceal = false}) {
+T? chooseShorthand<T>(
+  String message,
+  Iterable<T> options, {
+  List<String>? names,
+  T? defaultsTo,
+  bool chevron = true,
+  @deprecated bool colon = true,
+  AnsiCode inputColor = cyan,
+  bool color = true,
+  bool conceal = false,
+  AnsiCode mentionColor = cyan,
+}) {
   if (options.isEmpty) {
     throw ArgumentError.value('`options` may not be empty.');
   }
@@ -464,7 +472,10 @@ T? chooseShorthand<T>(String message, Iterable<T> options,
 
   for (var option in options) {
     var str = option.toString();
+    var prefix = names![i];
+
     if (i++ > 0) b.write('/');
+    b.write(' [$prefix] ');
 
     if (defaultsTo != null) {
       if (defaultsTo == option) {
@@ -480,11 +491,13 @@ T? chooseShorthand<T>(String message, Iterable<T> options,
   }
 
   b.write(')');
+  String result = b.toString();
+  // AnsiCode code = mentionColor;
 
   T? value;
 
   get(
-    b.toString(),
+    result,
     chevron: chevron && colon,
     inputColor: inputColor,
     color: color,
@@ -507,4 +520,16 @@ T? chooseShorthand<T>(String message, Iterable<T> options,
   );
 
   return value;
+}
+
+void printSelectMessage(
+  String prefixMention,
+  String? message, {
+  AnsiCode prefixColor = cyan,
+  AnsiCode showColor = red,
+}) {
+  var prefix = prefixColor.wrap(prefixMention);
+  var msg = showColor.wrap(message);
+
+  print('$prefix $msg');
 }
