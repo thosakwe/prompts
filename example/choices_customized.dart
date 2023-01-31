@@ -1,5 +1,5 @@
 import 'package:io/ansi.dart';
-import './prompts.dart' as prompts;
+import 'package:prompts/prompts.dart' as prompts;
 
 void main(List<String> args) {
   var albums = [
